@@ -5,7 +5,7 @@
 * inequality.py has functions returning different inequality metrics in a best-case scenario for one player feedback
 * players.py contains the Player class; each player is initialized with a utility, inequality aversion, and potentially a budget. players bid according to a parameterized utility function, choosing their bid b maximizing u_i(b) - pb, where p is the charged price. 
 
-##Future items to do
+## Future items to do
 * Add inequality metrics that consider population level inequality, not just best case based on an individual player.
 * Add more auctions
 * return social welfare, and compare when inequality averse vs neutral
