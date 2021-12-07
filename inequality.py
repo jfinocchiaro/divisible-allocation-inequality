@@ -9,3 +9,7 @@ def variance_bc(n):
 
 def gini_bc(n):
     return lambda x : (n-1) * cp.abs( x - (1.-x) / (n - 1.)) / n
+
+def total_ineq(player_dict, iq_metric='gini'):
+    #TODO
+    return 0

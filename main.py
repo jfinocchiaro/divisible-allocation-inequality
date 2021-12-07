@@ -29,10 +29,11 @@ def main():
 	print(final_price_u)
 	print(final_price_v)
 
+	
 	#calculate inequality at the end
-	#print(player_dict[0].bid_u(final_price_u))
-	#print(player_dict[0].bid_v(final_price_u, n))
+	#TODO
 
+	#plot utility of all the players in the auction with and without inequality aversion
 	utils.plotutilities(player_dict, final_price_u, final_price_v)
 
 

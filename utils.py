@@ -6,6 +6,10 @@ from matplotlib import pyplot as plt
 import inequality
 import players
 
+def socialwelfare(player_dict, bids, price, good_alloc):
+	utilities = [player.u(bids[key]) for key, player in player_dict.items()]
+	return np.sum(utilities), np.sum(utilities) - price * good_alloc
+
 def plotutilities(player_dict, price_u, price_v):
 
 	df_u = pd.DataFrame({key: {i: player.u(i) for i in np.arange(0.01, 1, 0.05)} for key, player in player_dict.items()})
