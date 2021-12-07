@@ -1,7 +1,7 @@
 import numpy as np
 import players
 
-def simultaneous_clock_auction_asc(player_dict,uorv = 'u',ineq='genent',reserve_price = 0.1,step_size = 0.1,max_price=10.):
+def simultaneous_clock_auction_asc(player_dict,uorv = 'u',ineq='genent',reserve_price = 0.1,step_size = 0.05,max_price=10.):
 	price = reserve_price
 	overdemand = True
 	while overdemand == True and price <= max_price:

@@ -10,6 +10,18 @@ def variance_bc(n):
 def gini_bc(n):
     return lambda x : (n-1) * cp.abs( x - (1.-x) / (n - 1.)) / n
 
-def total_ineq(player_dict, iq_metric='gini'):
-    #TODO
+def total_ineq(player_dict, bids, good_or_util='u', iq_metric='gini'):
+    if iq_metric == 'gini':
+        if good_or_util == 'u':
+            x = [player.u(bids[key]) for key, player in player_dict.items()]
+        else:
+            x = list(bids.keys())
+        
+        # Mean absolute difference
+        mad = np.abs(np.subtract.outer(x, x)).mean()
+        # Relative mean absolute difference
+        rmad = mad/np.mean(x)
+        # Gini coefficient
+        g = 0.5 * rmad
+        return g
     return 0
