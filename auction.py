@@ -20,7 +20,7 @@ def simultaneous_clock_auction_asc(player_dict,uorv = 'u',ineq='genent',reserve_
 	return bids, price
 
 
-def simultaneous_clock_auction_desc(player_dict,uorv = 'u',ineq='genent',reserve_price = 0.1,step_size = 0.1,max_price=10.):
+def simultaneous_clock_auction_desc(player_dict,uorv = 'u',ineq='genent',reserve_price = 0.1,step_size = 0.05,max_price=1.2):
 	price = max_price
 	overdemand = False
 	while overdemand == False and price >= reserve_price:

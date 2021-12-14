@@ -6,6 +6,7 @@ import cvxpy as cp
 class Player:
     def __init__(self, u_i=1., c_i=0.):
          self.u_cp = lambda x : u_i * cp.log((x+1))
+         self.u_i = u_i
          self.u = lambda x : u_i * np.log(x+1)
          self.c = c_i
 
@@ -31,5 +32,4 @@ class Player:
         bid = cp.Variable(1)
         prob = cp.Problem(cp.Maximize(self.u_cp(bid) - self.c * iq(bid) - price * bid), [0 <= bid, bid <= 1])
         prob.solve()
-        #print(iq(bid.value))
         return bid.value

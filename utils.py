@@ -46,27 +46,40 @@ def plotutilities(player_dict, price_u, price_v):
 	plt.savefig('figs/util_vp_gini.png');
 
 
-def ploteffectc(player_dict,ineq='gini'):
+def ploteffectc(player_dict, price_include_sw = True, ineq='gini', auct='asc'):
 	final_prices_c = {}
 	sw = {}
 	iq = {}
 
-	cs = np.arange(0., 1.5, 0.075)
+	cs = np.arange(0., 1.2, 0.05)
 	for c in cs:
 		for player in player_dict.values():
 			player.setc(c)
-		bv, fp_v = auction.simultaneous_clock_auction_asc(player_dict, uorv='v', ineq=ineq)
+		if 	auct == 'asc':
+			bv, fp_v = auction.simultaneous_clock_auction_asc(player_dict, uorv='v', ineq=ineq)
+		else:
+			bv, fp_v = auction.simultaneous_clock_auction_desc(player_dict, uorv='v', ineq=ineq)
 		final_prices_c[c] = fp_v
-		sw[c] = socialwelfare(player_dict, bv, fp_v, good_alloc=np.sum(list(bv.values())))[1]
+		if price_include_sw:
+			pi_sw='price_in_sw_'
+			sw[c] = socialwelfare(player_dict, bv, fp_v, good_alloc=np.sum(list(bv.values())))[1]
+		else:
+			pi_sw='no_price_in_sw_'
+			sw[c] = socialwelfare(player_dict, bv, fp_v, good_alloc=np.sum(list(bv.values())))[0]
 		iq[c] = inequality.total_ineq(player_dict, bv, good_or_util='u', iq_metric='gini')
 
-	print(final_prices_c)
-
+	
 	df_c_gini = pd.DataFrame({c: [final_prices_c[c], sw[c], iq[c]] for c in cs} , index=['Final prices', 'Social Welfare', 'Gini coefficient']).T
 	print(df_c_gini)
 	plt.figure()
 	df_c_gini.plot()
 	plt.xlabel('$c$')
 	#plt.ylabel('Final price $p$ / Social Welfare')
-	plt.title('Effect of inequality aversion $c$ on final price, social welfare, and inequality')
-	plt.savefig('figs/c_impact_price_gini.png');
+
+	if price_include_sw:
+		plt.title('Effect of inequality aversion $c$ on final price, \n social welfare (incl price), and inequality')
+		plt.savefig('figs/c_impact_price_gini_' + str(pi_sw) + str(auct) + '.png');
+
+	else:
+		plt.title('Effect of inequality aversion $c$ on final price, \n social welfare (excl price), and inequality')
+		plt.savefig('figs/c_impact_price_gini_' + str(pi_sw) + str(auct) + '.png');		
