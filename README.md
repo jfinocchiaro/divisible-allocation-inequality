@@ -9,6 +9,7 @@
 ## Future items to do
 * Add inequality metrics that consider population level inequality, not just best case based on an individual player.  How to implement this one is the least clear action step to me...
 * Add more auctions (currently supports ascending and descending clock auctions)
+* Would be interesting to see what happens when only a few agents care about inequality, and how their allocation, social welfare, and prices change as the number of agents caring about inequality increases
 
 ## Dependencies
 * numpy
