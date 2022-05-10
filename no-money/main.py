@@ -20,12 +20,17 @@ def main():
 	data['utilities'] = []
 	data['usw alloc u'] = []
 	data['usw alloc v'] = []
+	data['nsw alloc u'] = []
+	data['nsw alloc v'] = []
 	data['usw u'] = []
 	data['usw v'] = []
+	data['nsw u'] = []
+	data['nsw v'] = []
 	data['usw PoI'] = []
+	data['nsw PoI'] = []
 
 
-	num_reps = 10
+	num_reps = 500
 
 	#global vars
 	n = 2 #number of agents
@@ -52,32 +57,30 @@ def main():
 		# standard allocation setting
 		alloc = mechs.usw(player_dict, g)
 		data['usw alloc u'].append([alloc])
+		alloc_nsw = mechs.nsw_ceei(player_dict, g)
+		data['nsw alloc u'].append([alloc_nsw])
 		np.set_printoptions(suppress=True)
-		#print(alloc)
-		##print('FS inequality')
-		##print(utils.FS_inequality(player_dict, alloc))
-
+		
 		# allocations with social preferences
 		v_alloc = mechs.usw_v(player_dict, g)
-		#print(v_alloc)
+		v_alloc_nsw = mechs.nsw_ceei_v(player_dict, g)
 		data['usw alloc v'].append([v_alloc])
-		##print(np.sum(v_alloc, axis = 0)) #should be a ones vector if it allocates everything
-		##print('FS inequality')
-		##print(utils.FS_inequality(player_dict, v_alloc))
+		data['nsw alloc v'].append([v_alloc_nsw])
+		
 
-	    # print social welfare and price of inequality
-		#print('\n')
-		#print('USW')
-		#print('Selfish preferences')
+	    #compute social welfare and price of inequality
 		usw_u = utils.utilitariansocialwelfare(player_dict, alloc)
+		nsw_u = utils.nashsocialwelfare(player_dict, alloc_nsw)
 		data['usw u'].append(usw_u)
-		#print(usw_u)
-		#print('Social preferences')
+		data['nsw u'].append(nsw_u)
+
 		usw_v = utils.utilitariansocialwelfare(player_dict, v_alloc)
 		data['usw v'].append(usw_v)
-		#print(usw_v)
-		#print('PoI: ' + str(float(usw_v / usw_u)))
+		nsw_v = utils.nashsocialwelfare(player_dict, v_alloc_nsw)
+		data['nsw v'].append(nsw_v)
+
 		data['usw PoI'].append(float(usw_v / usw_u))
+		data['nsw PoI'].append(float(nsw_v / nsw_u))
 
 
 	df = pd.DataFrame(data=data)
@@ -90,6 +93,14 @@ def main():
 		df.to_csv(filename,index=False)
 	else:
 		df.to_csv(filename, mode='a', index=False, header=False)
+
+
+
+	plt.figure()
+	df.plot.scatter(x='usw PoI', y='nsw PoI')
+	plt.title('Price of Inequality: NSW vs USW optimization')
+	plt.savefig('figs/PoI_NSW_USW.png');
+
 
 
 if __name__ == "__main__":
