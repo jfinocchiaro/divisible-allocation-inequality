@@ -37,3 +37,16 @@ def variance(player_dict, alloc):
     mu = np.mean([player.u(alloc[key]) for (key, player) in player_dict.items()])
     dev = [(player.u(alloc[key]) / mu) ** 2 for (key, player) in player_dict.items()]
     return np.sum(dev) / (len(player_dict.keys()) - 1.)
+
+# Gini coefficient of utilities
+def total_gini(player_dict, alloc):
+    x = [player.u(alloc[key]) for key, player in player_dict.items()]
+
+    # Mean absolute difference
+    mad = np.abs(np.subtract.outer(x, x)).mean()
+    # Relative mean absolute difference
+    rmad = mad/np.mean(x)
+    # Gini coefficient
+    g = 0.5 * rmad
+    return g
+    

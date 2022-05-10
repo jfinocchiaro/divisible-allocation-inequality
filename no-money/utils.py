@@ -4,14 +4,21 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import inequality
-import auction
+import mechs
 import players
 
-def socialwelfare(player_dict, bids, good_alloc=1):
-	utilities = [player.u(bids[key]) for key, player in player_dict.items()]
+def utilitariansocialwelfare(player_dict, alloc):
+	utilities = [player.u(alloc[key]) for key, player in player_dict.items()]
 	return np.sum(utilities)
 
+def nashsocialwelfare(player_dict, alloc):
+	utilities = [player.u(alloc[key]) for key, player in player_dict.items()]
+	return np.prod(utilities)
 
+def FS_inequality(player_dict, alloc):
+	n = len(list(player_dict.values()))
+	FS = lambda x : (1. / n) * ((1 / (n - 1.)) * np.sum([np.sum([np.abs(np.dot(primary.u_i, x[identifier]) - np.dot(player.u_i, x[k])) for (k, player) in player_dict.items()]) for (identifier, primary) in player_dict.items()]))
+	return FS(alloc)
 	
 def plotutilities(player_dict, price_u, price_v):
 
