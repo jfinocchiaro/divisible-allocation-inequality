@@ -13,24 +13,21 @@ from random import uniform
 
 
 def main():
+	np.set_printoptions(suppress=True)
 	#holder vars
 	player_dict = {}
-	data = {}
-	data['inequality tolerance'] = []
-	data['utilities'] = []
-	data['usw alloc u'] = []
-	data['usw alloc v'] = []
-	data['nsw alloc u'] = []
-	data['nsw alloc v'] = []
-	data['usw u'] = []
-	data['usw v'] = []
-	data['nsw u'] = []
-	data['nsw v'] = []
-	data['usw PoI'] = []
-	data['nsw PoI'] = []
+	data = {'inequality tolerance': [], 'utilities': [],\
+	'usw alloc u': [], 'usw alloc v': [], \
+	'nsw alloc u': [], 'nsw alloc v': [], \
+	'maxmin alloc u': [], 'maxmin alloc v': [], \
+	'usw u': [], 'usw v': [], \
+	'nsw u': [], 'nsw v': [], \
+	'maxmin u': [], 'maxmin v': [], \
+	'usw PoI' : [], 'nsw PoI' : [], 'maxmin PoI' : [],
+	}
 
 
-	num_reps = 500
+	num_reps = 1000
 
 	#global vars
 	n = 2 #number of agents
@@ -59,33 +56,42 @@ def main():
 		data['usw alloc u'].append([alloc])
 		alloc_nsw = mechs.nsw_ceei(player_dict, g)
 		data['nsw alloc u'].append([alloc_nsw])
-		np.set_printoptions(suppress=True)
+		alloc_maxmin = mechs.maxmin_u(player_dict, g)
+		data['maxmin alloc u'].append([alloc_maxmin])
+
 		
 		# allocations with social preferences
 		v_alloc = mechs.usw_v(player_dict, g)
 		v_alloc_nsw = mechs.nsw_ceei_v(player_dict, g)
+		v_alloc_maxmin = mechs.maxmin_v(player_dict, g)
 		data['usw alloc v'].append([v_alloc])
 		data['nsw alloc v'].append([v_alloc_nsw])
+		data['maxmin alloc v'].append([v_alloc_maxmin])
 		
 
 	    #compute social welfare and price of inequality
 		usw_u = utils.utilitariansocialwelfare(player_dict, alloc)
 		nsw_u = utils.nashsocialwelfare(player_dict, alloc_nsw)
+		maxminsw_u = utils.rawlsiansocialwelfare(player_dict, alloc_maxmin)
 		data['usw u'].append(usw_u)
 		data['nsw u'].append(nsw_u)
+		data['maxmin u'].append(maxminsw_u)
 
 		usw_v = utils.utilitariansocialwelfare(player_dict, v_alloc)
-		data['usw v'].append(usw_v)
 		nsw_v = utils.nashsocialwelfare(player_dict, v_alloc_nsw)
+		maxminsw_v = utils.rawlsiansocialwelfare(player_dict, v_alloc_maxmin)
+		data['usw v'].append(usw_v)
 		data['nsw v'].append(nsw_v)
+		data['maxmin v'].append(maxminsw_v)
 
 		data['usw PoI'].append(float(usw_v / usw_u))
 		data['nsw PoI'].append(float(nsw_v / nsw_u))
+		data['maxmin PoI'].append(float(maxminsw_v / maxminsw_u))
 
 
 	df = pd.DataFrame(data=data)
 
-	print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
+	#print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
 
 	from os.path import exists
 	filename = 'simulation_results.csv'
@@ -96,10 +102,11 @@ def main():
 
 
 
-	plt.figure()
-	df.plot.scatter(x='usw PoI', y='nsw PoI')
-	plt.title('Price of Inequality: NSW vs USW optimization')
-	plt.savefig('figs/PoI_NSW_USW.png');
+	utils.spPoI(df, 'usw PoI', 'nsw PoI', 'Price of Inequality: NSW vs USW optimization', 'figs/PoI_NSW_USW_uniformprefs.png')
+	utils.spPoI(df, 'usw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs USW optimization', 'figs/PoI_maxmin_USW_uniformprefs.png')
+	utils.spPoI(df, 'nsw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs NSW optimization', 'figs/PoI_maxmin_NSW_uniformprefs.png')
+
+	utils.boxplot(df, ['usw PoI', 'nsw PoI', 'maxmin PoI'],plottitle='Price of Inequalities: Uniformly random Preferences', filename='figs/boxplot_PoIs_uniformprefs.png')
 
 
 

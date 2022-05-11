@@ -15,6 +15,10 @@ def nashsocialwelfare(player_dict, alloc):
 	utilities = [player.u(alloc[key]) for key, player in player_dict.items()]
 	return np.prod(utilities)
 
+def rawlsiansocialwelfare(player_dict, alloc):
+	utilities = [player.u(alloc[key]) for key, player in player_dict.items()]
+	return np.min(utilities)
+
 def FS_inequality(player_dict, alloc):
 	n = len(list(player_dict.values()))
 	FS = lambda x : (1. / n) * ((1 / (n - 1.)) * np.sum([np.sum([np.abs(np.dot(primary.u_i, x[identifier]) - np.dot(player.u_i, x[k])) for (k, player) in player_dict.items()]) for (identifier, primary) in player_dict.items()]))
@@ -92,3 +96,16 @@ def ploteffectc(player_dict, price_include_sw = True, ineq='gini', auct='asc'):
 	else:
 		plt.title('Effect of inequality aversion $c$ on final price, \n social welfare (excl price), and inequality')
 		plt.savefig('figs/c_impact_price_gini_' + str(pi_sw) + str(auct) + '.png');		
+
+
+def spPoI(df, xname, yname, plottitle, filename):
+	plt.figure()
+	df.plot.scatter(x=xname, y=yname)
+	plt.title(plottitle)
+	plt.savefig(filename);
+
+def boxplot(df, cols, plottitle='Price of Inequality by varying SW metrics', filename='figs/boxplot_PoIs.png'):
+	plt.figure()
+	df.boxplot(column=cols, grid=False)
+	plt.title(plottitle)
+	plt.savefig(filename);
