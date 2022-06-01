@@ -10,6 +10,7 @@ import utils
 from sklearn.preprocessing import normalize
 from tabulate import tabulate
 from random import uniform
+from scipy import stats
 
 
 def main():
@@ -29,26 +30,31 @@ def main():
 	}
 
 
-	num_reps = 500
+	num_reps = 100
 
 	#global vars
-	n = 4 #number of agents
-	g = 4 #number of goods
-	alpha = [0.2, 0.2,0.2, 0.2] #value for inequality tolerance.
+	n = 3 #number of agents
+	g = 3 #number of goods
+	alpha = [0.2, 0.2, 0.2] #value for inequality tolerance.
 	util_type = 'linear'
 
 	for _ in range(num_reps):
 
 		data['inequality tolerance'].append(alpha)
 
+		# different variations of correlating preferences
 		#eps = 2. - np.sqrt(2)
 		#init_u = [[0.5, 0.5, 0.], [(1. -eps) / 2, (1. -eps) / 2, eps]]
-		eps = 0.05
-		#init_u = list(normalize([[1., 1., uniform(0, eps)], [1 - eps + uniform(-eps, eps), 1. - eps + uniform(-eps, eps), 2. * eps + uniform(-eps, eps)]], axis=1, norm='l1'))
 		#eps = 0.05
-		#init_u = [[1. - eps, eps, 0.], [0.5 + eps, 0, 0.5 - eps], [0., 0.5, 0.5]]
-		#print(init_u)
-		init_u = list(normalize(np.random.rand(n,g), axis=1, norm='l1'))
+		#init_u = list(normalize([[1., 1., uniform(0, eps)], [1 - eps + uniform(-eps, eps), 1. - eps + uniform(-eps, eps), 2. * eps + uniform(-eps, eps)]], axis=1, norm='l1'))
+		
+		# example studied in meeting
+		eps = 0.05
+		init_u = [[1. - eps, eps, 0.], [0.5 + eps, 0, 0.5 - eps], [0., 0.5, 0.5]]
+		
+
+		# uniformly random utilities
+		#init_u = list(normalize(np.random.rand(n,g), axis=1, norm='l1'))
 		data['utilities'].append([init_u])
 
 		#initialize players
@@ -113,11 +119,14 @@ def main():
 
 
 
-	utils.spPoI(df, 'usw PoI', 'nsw PoI', 'Price of Inequality: NSW vs USW optimization', 'figs/PoI_NSW_USW_uniformprefs_4players.png')
+
+	slope, intercept, r_value, p_value, std_err = stats.linregress(df['usw PoI'], df['nsw PoI'])
+	utils.spPoI(df, 'usw PoI', 'nsw PoI', 'Price of Inequality: NSW vs USW optimization', 'figs/PoI_NSW_USW_corrprefs_3players_wr2.png', rsq=r_value, slope=slope, yint=intercept)
 	#utils.spPoI(df, 'usw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs USW optimization', 'figs/PoI_maxmin_USW_uniformprefs_4players.png')
 	#utils.spPoI(df, 'nsw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs NSW optimization', 'figs/PoI_maxmin_NSW_uniformprefs.png')
 
-	utils.boxplot(df, ['usw PoI', 'nsw PoI', 'maxmin PoI'],plottitle='Price of Inequalities: Uniformly random Preferences', filename='figs/boxplot_PoIs_uniformprefs_4players.png')
+	#utils.boxplot(df, ['usw PoI', 'nsw PoI', 'maxmin PoI'],plottitle='Price of Inequalities: Uniformly random Preferences', filename='figs/boxplot_PoIs_uniformprefs.png')
+
 
 
 

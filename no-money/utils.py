@@ -98,10 +98,22 @@ def ploteffectc(player_dict, price_include_sw = True, ineq='gini', auct='asc'):
 		plt.savefig('figs/c_impact_price_gini_' + str(pi_sw) + str(auct) + '.png');		
 
 
-def spPoI(df, xname, yname, plottitle, filename):
+def spPoI(df, xname, yname, plottitle, filename, rsq=None, slope=None, yint=None):
 	plt.figure()
 	df.plot.scatter(x=xname, y=yname)
-	plt.title(plottitle)
+	if slope is not None:
+		mn=np.min(df[xname])
+		mx=np.max(df[xname])
+		x1=np.linspace(mn,mx,500)
+		y1=slope*x1+yint
+		plt.plot(x1,y1,'-r')
+	if rsq is not None:
+		plt.title(plottitle + ' $r^2$ = {rsq:.2f}'.format(rsq=rsq))
+	else:
+		plt.title(plottitle)
+
+	
+	
 	plt.savefig(filename);
 
 def boxplot(df, cols, plottitle='Price of Inequality by varying SW metrics', filename='figs/boxplot_PoIs.png'):
