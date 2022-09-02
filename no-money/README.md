@@ -17,4 +17,5 @@
 * scipy
 
 ## To run
-go to the no/money directory in your console and enter "python3 main.py"
+install dependencies, clone the repo, etc. 
+go to the no-money directory in your console and enter "python3 main.py"
