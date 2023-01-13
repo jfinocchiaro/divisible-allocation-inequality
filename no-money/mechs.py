@@ -101,6 +101,19 @@ def usw_v(player_dict, num_goods):
 	return alloc.value
 
 
+def usw_v_cm(player_dict, num_goods): 
+	num_agents = len(list(player_dict.keys()))
+	alloc = cp.Variable((num_agents, num_goods))
+	c = np.min([player_dict[key].c for key in player_dict.keys()])
+	maxprob = cp.Maximize(cp.sum([player_dict[key].v_cp(alloc) for i, key in enumerate(list(player_dict.keys()))]))
+	constraints = [alloc >= 0] + [cp.sum(alloc[:, j]) <= 1 for j in range(num_goods)] #+ [inequality.total_gini(player_dict, alloc) <= c]
+	prob = cp.Problem(maxprob, constraints)
+	prob.solve()
+	#print('Dual variables')
+	#print([constraint.dual_value for constraint in constraints])
+	return alloc.value
+
+
 #maximizing Rawlsian social welfare.  maxmiizing the minimum utility
 def maxmin_u(player_dict, num_goods): 
 	num_agents = len(list(player_dict.keys()))

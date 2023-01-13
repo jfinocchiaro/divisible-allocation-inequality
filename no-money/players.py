@@ -20,6 +20,7 @@ class Player:
             self.u_i = u_i
             self.u = lambda x : np.dot(x, u_i)
             self.v_cp = lambda x : np.array(u_i) @ x[identifier] - ((self.c / (n - 1.)) * cp.sum([cp.abs(np.array(u_i) @ x[identifier] - np.array(U[k]) @ x[k]) for k in range(n)]))
+#            self.v_cp = lambda x : np.array(u_i) @ x[identifier] - ((self.c / (n - 1.)) * cp.sum([cp.abs(np.array(u_i) @ x[identifier] - np.array(U[k]) @ x[k]) for k in range(n)]))
             self.v_np = lambda x : np.dot(u_i, x[identifier]) - ((self.c / (n - 1.)) * np.sum([np.abs(np.dot(u_i, x[identifier]) - np.dot(U[k], x[k])) for k in range(n)]))
         else:
             self.u_cp = lambda x : np.sum([u * cp.log((x+1)) for u in u_i])
