@@ -18,10 +18,11 @@ def main():
 	np.set_printoptions(suppress=True)
 	#holder vars
 	n = 10
-	g = n
+	g = 3
 	#alphas = np.linspace(0,0.5, num=200)
-	alpha = 0.3
-	experiments.effect_prop_averse(n,g, alpha, save=False)
+	alpha = [0.3] * n
+	df = experiments.PoI(n,g, alpha, save=False, num_reps = 1)
+	print(df['max tradeoff'])
 
 
 if __name__ == "__main__":

@@ -24,6 +24,12 @@ def FS_inequality(player_dict, alloc):
 	FS = lambda x : (1. / n) * ((1 / (n - 1.)) * np.sum([np.sum([np.abs(np.dot(primary.u_i, x[identifier]) - np.dot(player.u_i, x[k])) for (k, player) in player_dict.items()]) for (identifier, primary) in player_dict.items()]))
 	return FS(alloc)
 	
+	
+def max_util_loss(player_dict, alloc_u, alloc_v):
+	return max([float(player.u(alloc_u[key])) / player.u(alloc_v[key]) for (key, player) in player_dict.items()])
+	
+	
+	
 def plotutilities(player_dict, price_u, price_v):
 
 	df_u = pd.DataFrame({key: {i: player.u(i) for i in np.arange(0.01, 1, 0.05)} for key, player in player_dict.items()})

@@ -1,5 +1,7 @@
 import numpy as np
 import cvxpy as cp
+import mechs
+from players import Player
 
 def FehrSchmidtIneq(player_dict, alloc):
     total = 0
@@ -52,3 +54,22 @@ def total_gini(player_dict, alloc):
     g = 0.5 * rmad
     return g
     
+def loss(player_dict, alloc_u, alloc_v):
+    tot = [player.u(alloc_u[i]) - player.u(alloc_v[i])for i, player in enumerate(player_dict.values())]
+    return np.sum(tot)
+
+def gain(player_dict, alloc_u, alloc_v, alphas):
+    for i, (key, player) in enumerate(player_dict.items()):
+        player.setc(alphas[i])
+        player_dict[key] = player
+    
+    #print('valuation x-alpha: ' + str(player.v_np(alloc_v)) + ' valuation x-star: ' + str(player.v_np(alloc_u)))
+    #print('alpha: ' + str(alphas[0]))
+    #print('I(x-star): ' + str(alphas[0] * FehrSchmidtIneq(player_dict, alloc_u)))
+    #print('f(u(x-star)): ' + str(mechs.compute_usw(player_dict, alloc_u)))
+    #print('I(x-alpha): ' + str(alphas[0] * FehrSchmidtIneq(player_dict, alloc_v)))
+    #print('f(u(x-alpha)): ' + str(mechs.compute_usw(player_dict, alloc_v)))
+    tot_v = [player.v_np(alloc_v) for i, player in enumerate(player_dict.values())]
+    tot_u = [player.v_np(alloc_u) for i, player in enumerate(player_dict.values())]
+    return np.sum(tot_v) - np.sum(tot_u)
+
