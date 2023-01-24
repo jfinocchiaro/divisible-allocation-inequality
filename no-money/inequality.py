@@ -55,13 +55,15 @@ def total_gini(player_dict, alloc):
     return g
     
 def loss(player_dict, alloc_u, alloc_v):
-    tot = [player.u(alloc_u[i]) - player.u(alloc_v[i])for i, player in enumerate(player_dict.values())]
+    tot = [player.u(alloc_u[i]) - player.u(alloc_v[i]) for i, player in enumerate(player_dict.values())]
     return np.sum(tot)
 
-def gain(player_dict, alloc_u, alloc_v, alphas):
-    for i, (key, player) in enumerate(player_dict.items()):
-        player.setc(alphas[i])
-        player_dict[key] = player
+def gain(player_dict, alloc_u, alloc_v, alphas = None):
+    if alphas is not None:
+        for i, (key, player) in enumerate(player_dict.items()):
+            player.setc(alphas[i])
+            player_dict[key] = player
+    
     
     #print('valuation x-alpha: ' + str(player.v_np(alloc_v)) + ' valuation x-star: ' + str(player.v_np(alloc_u)))
     #print('alpha: ' + str(alphas[0]))
@@ -71,5 +73,7 @@ def gain(player_dict, alloc_u, alloc_v, alphas):
     #print('f(u(x-alpha)): ' + str(mechs.compute_usw(player_dict, alloc_v)))
     tot_v = [player.v_np(alloc_v) for i, player in enumerate(player_dict.values())]
     tot_u = [player.v_np(alloc_u) for i, player in enumerate(player_dict.values())]
+    #print('tot v: ' + str(np.sum(tot_v)))
+    #print('tot u: ' + str(np.sum(tot_u)))
     return np.sum(tot_v) - np.sum(tot_u)
 
