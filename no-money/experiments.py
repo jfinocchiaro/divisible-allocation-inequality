@@ -3,306 +3,108 @@ import mechs
 import players
 import pandas as pd
 import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import inequality
-import utils
+import utilities
 from sklearn.preprocessing import normalize
 from tabulate import tabulate
 from random import uniform
 from scipy import stats
+from itertools import chain
+from math import dist
 
 
 
-def PoI(n,g, alpha, util_type = 'linear', num_reps = 10000, save=True):
+
+def effect_alpha(init_u, n,g, alphas, util_type = 'linear', save=True):
+
+    data = {'alphas': [], 'inequality tolerance': [], 'utilities': [],\
+                'usw alloc u': [], 'usw alloc v': [], \
+                'usw u': [], 'usw v': [], \
+                'usw PoI' : [], \
+                'usw max util loss' : [], \
+                'usw xstar FS inequality' : [],\
+                'usw xalpha FS inequality' : [],\
+                'distance' : [], 'loss': [], 'gain' : [], 'gain to loss' : []\
+           }
+
+
+
     player_dict = {}
-    data = {'inequality tolerance': [], 'utilities': [],\
-                'usw alloc u': [], 'usw alloc v': [], 'nsw alloc u': [], 'nsw alloc v': [], 'maxmin alloc u': [], 'maxmin alloc v': [],\
-                'usw u': [], 'usw v': [], 'nsw u': [], 'nsw v': [], 'maxmin u': [], 'maxmin v': [], \
-                'usw PoI' : [], 'nsw PoI' : [], 'maxmin PoI' : [], \
-                'usw max util loss' : [], 'nsw max util loss' : [], 'maxmin max util loss' : [], \
-                'usw xstar FS inequality' : [], 'nsw xstar FS inequality' : [], 'maxmin xstar FS inequality' : [], \
-                'usw xalpha FS inequality' : [], 'nsw xalpha FS inequality' : [], 'maxmin xalpha FS inequality' : [], 'max tradeoff' : [] }
+    #initialize players
+    for player in range(n):
+        alp = max(0.,np.random.normal(0.0, 0.05))
+        player_dict[player] = players.Player(player, init_u[player], alp, util_type, g, n, init_u) #random u_ij in [0,1] parameterizing the utility	
 
-
-    #global vars
-    #n = 3 #number of agents
-    #g = 3 #number of goods
-    #alpha = [0.2, 0.2, 0.2] #value for inequality tolerance.
-    util_type = 'linear'
-
-    for _ in range(num_reps):
-        
-        data['inequality tolerance'].append(alpha)
-        
-        # different variations of correlating preferences
-        #eps = 2. - np.sqrt(2)
-        #init_u = [[0.5, 0.5, 0.], [(1. -eps) / 2, (1. -eps) / 2, eps]]
-        eps = 0.05
-        #init_u = list(normalize([[1., 1., uniform(0, eps)], [1 - eps + uniform(-eps, eps), 1. - eps + uniform(-eps, eps), 2. * eps + uniform(-eps, eps)], ], axis=1, norm='l1'))
-        init_u = list(normalize([([1] * (g-1) + [uniform(0, eps)]) for _ in range(n)], axis=1, norm='l1'))
-
-        # example studied in meeting
-        #eps_max_1 = 0.05
-        #eps_max_2 = 0.05
-        #eps_1 = uniform(0, eps_max_1)
-        #eps_2 = uniform(0, eps_max_2)
-        #init_u = [[1. - eps_1, eps_1, 0.], [0.5 + eps_2, 0, 0.5 - eps_2], [0., 0.5, 0.5]]
-
-
-        # uniformly random utilities
-        #init_u = list(normalize(np.random.rand(n,g), axis=1, norm='l1'))
+    for alpha in alphas:
         data['utilities'].append([init_u])
+        data['alphas'].append(alpha)
 
-        #initialize players
+        data['inequality tolerance'].append(alphas)
+
         for player in range(n):
-            player_dict[player] = players.Player(player, init_u[player], alpha[player], util_type, g, n, init_u) #random u_ij in [0,1] parameterizing the utility and c_i constant
+            alp = max(0.,np.random.normal(alpha, 0.01))
+            player_dict[player].setc(alp)
 
-        # standard allocation setting
+        # standard allocation setting; compute x*
         alloc = mechs.usw(player_dict, g)
         data['usw alloc u'].append([alloc])
         data['usw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc))
-        alloc_nsw = mechs.nsw_ceei(player_dict, g)
-        data['nsw alloc u'].append([alloc_nsw])
-        data['nsw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_nsw))
-        alloc_maxmin = mechs.maxmin_u(player_dict, g)
-        data['maxmin alloc u'].append([alloc_maxmin])
-        data['maxmin xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_maxmin))
 
 
-        # allocations with social preferences
+
+        # allocations with social preferences; compute x^\alpha
         v_alloc = mechs.usw_v(player_dict, g)
-        v_alloc_nsw = mechs.nsw_ceei_v(player_dict, g)
-        v_alloc_maxmin = mechs.maxmin_v(player_dict, g)
         data['usw alloc v'].append([v_alloc])
         data['usw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc))
-        data['nsw alloc v'].append([v_alloc_nsw])
-        data['nsw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_nsw))
-        data['maxmin alloc v'].append([v_alloc_maxmin])
-        data['maxmin xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_maxmin))
 
-        #compute max utility loss for any individual
-        data['usw max util loss'] = utils.max_util_loss(player_dict, alloc, v_alloc)
-        data['nsw max util loss'] = utils.max_util_loss(player_dict, alloc_nsw, v_alloc_nsw)
-        data['maxmin max util loss'] = utils.max_util_loss(player_dict, alloc_maxmin, v_alloc_maxmin)
+        #compute individual tradeoff
+        data['usw max util loss'] = utilities.max_util_loss(player_dict, alloc, v_alloc)
 
-        
 
-        #compute social welfare and price of inequality
-        usw_u = utils.utilitariansocialwelfare(player_dict, alloc)
-        nsw_u = utils.nashsocialwelfare(player_dict, alloc_nsw)
-        maxminsw_u = utils.rawlsiansocialwelfare(player_dict, alloc_maxmin)
+        #compute social welfare f(u(x^*))
+        usw_u = utilities.utilitariansocialwelfare(player_dict, alloc)
         data['usw u'].append(usw_u)
-        data['nsw u'].append(nsw_u)
-        data['maxmin u'].append(maxminsw_u)
-        
-        # compute max individual tradeoff
-        max_tradeoff = max([player.u(alloc[i]) / player.u(v_alloc[i]) for i, player in enumerate(player_dict.values())])
-        data['max tradeoff'].append(max_tradeoff)
 
-        # compute different social welfares for the x-alpha allocations
-        usw_v = utils.utilitariansocialwelfare(player_dict, v_alloc)
-        nsw_v = utils.nashsocialwelfare(player_dict, v_alloc_nsw)
-        maxminsw_v = utils.rawlsiansocialwelfare(player_dict, v_alloc_maxmin)
+        # compute f(u(x^\alpha))
+        usw_v = utilities.utilitariansocialwelfare(player_dict, v_alloc)
         data['usw v'].append(usw_v)
-        data['nsw v'].append(nsw_v)
-        data['maxmin v'].append(maxminsw_v)
 
+        # compute old loss ratio (deprecated but afraid to erase)
         data['usw PoI'].append(float(usw_v / usw_u))
-        data['nsw PoI'].append(float(nsw_v / nsw_u))
-        data['maxmin PoI'].append(float(maxminsw_v / maxminsw_u))
+        
+        # compute loss f(u(x*)) - f(u(x^alpha))
+        loss = inequality.loss(player_dict, alloc, v_alloc)
+        data['loss'].append(loss)
+        
+        #compute gain f(v(x^\alpha)) - f(v(x*))
+        gain = inequality.gain(player_dict, alloc, v_alloc,alphas=None)
+        data['gain'].append(gain)
+
+        # compute distance d(x*, x^\alpha) in allocation space
+        distance = dist(list(chain(*alloc)), list(chain(*v_alloc)))
+        data['distance'].append(distance)
+        
+        #compute gain-to-loss ratio
+        data['gain to loss'].append(max(gain / (1.0 * loss), 0.))
+
+
 
 
     df = pd.DataFrame(data=data)
 
-
-    #print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
-
-    if save:
-        from os.path import exists
-        filename = 'simulation_results_demo.csv'
-        if exists(filename) == False:
-            df.to_csv(filename,index=False)
-        else:
-            df.to_csv(filename, mode='a', index=False, header=False)
-
-    else: 
-        pass
-
-
-    ## Printing plots! :upside down smiling face:
-    slope, intercept, r_value, p_value, std_err = stats.linregress(df['usw PoI'], df['nsw PoI'])
-    #utils.spPoI(df, 'usw PoI', 'nsw PoI', 'Price of Inequality: NSW vs USW optimization', 'figs/PoI_NSW_USW_corrprefs_3players_wr2.png', rsq=r_value, slope=slope, yint=intercept)
-    #utils.spPoI(df, 'usw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs USW optimization', 'figs/PoI_maxmin_USW_uniformprefs_4players.png')
-    #utils.spPoI(df, 'nsw PoI', 'maxmin PoI', 'Price of Inequality: Max-Min vs NSW optimization', 'figs/PoI_maxmin_NSW_uniformprefs.png')
-
-    #utils.boxplot(df, ['usw PoI', 'nsw PoI', 'maxmin PoI'],plottitle='Price of Inequalities: Uniformly random Preferences', filename='figs/boxplot_PoIs_uniformprefs.png')
-
     return df
 
 
-
-
-def effect_alpha(n,g, alphas, util_type = 'linear', save=True):
-	#player_dict = {}
-	data = {'alphas': [], 'inequality tolerance': [], 'utilities': [],\
-                'usw alloc u': [], 'usw alloc v': [], 'nsw alloc u': [], 'nsw alloc v': [], 'maxmin alloc u': [], 'maxmin alloc v': [],\
-                'usw u': [], 'usw v': [], 'nsw u': [], 'nsw v': [], 'maxmin u': [], 'maxmin v': [], \
-                'usw PoI' : [], 'nsw PoI' : [], 'maxmin PoI' : [], \
-                'usw max util loss' : [], 'nsw max util loss' : [], 'maxmin max util loss' : [], \
-                'usw xstar FS inequality' : [], 'nsw xstar FS inequality' : [], 'maxmin xstar FS inequality' : [], \
-                'usw xalpha FS inequality' : [], 'nsw xalpha FS inequality' : [], 'maxmin xalpha FS inequality' : [] }
-
-
-
-	# different variations of correlating preferences
-	#eps = 2. - np.sqrt(2)
-	#init_u = [[0.5, 0.5, 0.], [(1. -eps) / 2, (1. -eps) / 2, eps]]
-	#eps = 0.05
-	#init_u = list(normalize([[1., 1., uniform(0, eps)], [1 - eps + uniform(-eps, eps), 1. - eps + uniform(-eps, eps), 2. * eps + uniform(-eps, eps)]], axis=1, norm='l1'))
-	
-	# example studied in meeting
-	#eps_max_1 = 0.05
-	#eps_max_2 = 0.05
-	#eps_1 = uniform(0, eps_max_1)
-	#eps_2 = uniform(0, eps_max_2)
-	#init_u = [[1. - eps_1, eps_1, 0.], [0.5 + eps_2, 0, 0.5 - eps_2], [0., 0.5, 0.5]]
-	
-
-	# uniformly random utilities
-	init_u = list(normalize(np.random.rand(n,g), axis=1, norm='l1'))
-
-	player_dict = {}
-	#initialize players
-	for player in range(n):
-		player_dict[player] = players.Player(player, init_u[player], alphas[player], util_type, g, n, init_u) #random u_ij in [0,1] parameterizing the utility	
-
-	for alpha in alphas:
-		data['utilities'].append([init_u])
-		data['alphas'].append(alpha)
-
-		data['inequality tolerance'].append(alphas)
-
-		for player in range(n):
-			player_dict[player].setc(alpha)
-
-		# standard allocation setting
-		alloc = mechs.usw(player_dict, g)
-		data['usw alloc u'].append([alloc])
-		data['usw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc))
-		alloc_nsw = mechs.nsw_ceei(player_dict, g)
-		data['nsw alloc u'].append([alloc_nsw])
-		data['nsw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_nsw))
-		alloc_maxmin = mechs.maxmin_u(player_dict, g)
-		data['maxmin alloc u'].append([alloc_maxmin])
-		data['maxmin xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_maxmin))
-
-		
-		# allocations with social preferences
-		v_alloc = mechs.usw_v(player_dict, g)
-		v_alloc_nsw = mechs.nsw_ceei_v(player_dict, g)
-		v_alloc_maxmin = mechs.maxmin_v(player_dict, g)
-		data['usw alloc v'].append([v_alloc])
-		data['usw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc))
-		data['nsw alloc v'].append([v_alloc_nsw])
-		data['nsw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_nsw))
-		data['maxmin alloc v'].append([v_alloc_maxmin])
-		data['maxmin xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_maxmin))
-		
-		#compute max utility loss for any individual
-		data['usw max util loss'] = utils.max_util_loss(player_dict, alloc, v_alloc)
-		data['nsw max util loss'] = utils.max_util_loss(player_dict, alloc_nsw, v_alloc_nsw)
-		data['maxmin max util loss'] = utils.max_util_loss(player_dict, alloc_maxmin, v_alloc_maxmin)
-		
-		
-
-                #compute social welfare and price of inequality
-		usw_u = utils.utilitariansocialwelfare(player_dict, alloc)
-		nsw_u = utils.nashsocialwelfare(player_dict, alloc_nsw)
-		maxminsw_u = utils.rawlsiansocialwelfare(player_dict, alloc_maxmin)
-		data['usw u'].append(usw_u)
-		data['nsw u'].append(nsw_u)
-		data['maxmin u'].append(maxminsw_u)
-
-		usw_v = utils.utilitariansocialwelfare(player_dict, v_alloc)
-		nsw_v = utils.nashsocialwelfare(player_dict, v_alloc_nsw)
-		maxminsw_v = utils.rawlsiansocialwelfare(player_dict, v_alloc_maxmin)
-		data['usw v'].append(usw_v)
-		data['nsw v'].append(nsw_v)
-		data['maxmin v'].append(maxminsw_v)
-
-		data['usw PoI'].append(float(usw_v / usw_u))
-		data['nsw PoI'].append(float(nsw_v / nsw_u))
-		data['maxmin PoI'].append(float(maxminsw_v / maxminsw_u))
-
-
-	
-
-	df = pd.DataFrame(data=data)
-
-	
-
-	if save:
-		#print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
-
-		from os.path import exists
-		filename = 'effect_alpha.csv'
-		if exists(filename) == False:
-			df.to_csv(filename,index=False)
-		else:
-			df.to_csv(filename, mode='a', index=False, header=False)
-
-
-
-
-	## Printing plots! :upside down smiling face:
-	plt.figure()
-	df.plot.scatter(x='alphas', y='usw v', s=3)
-	plt.title('Effect of $\\alpha$ on Utilitarian Social Welfare')
-	plt.savefig('figs/effect_alpha_USW_v_n' + str(n) + '_g' + str(g) + '.png');
-	
-	'''
-	plt.figure()
-	df.plot.scatter(x='alphas', y='usw xalpha FS inequality')
-	plt.title('Effect of $\\alpha$ on $I(x^{\\alpha})$')
-	plt.savefig('figs/effect_alpha_USW_Ix.png');
-	'''
-	
-	plt.figure()
-	df.plot.scatter(x='alphas', y='nsw v', s=3)
-	plt.title('Effect of $\\alpha$ on Nash Social Welfare')
-	plt.savefig('figs/effect_alpha_NSW_v_n'+ str(n) + '_g' + str(g) + '.png');
-	
-	'''
-	plt.figure()
-	df.plot.scatter(x='alphas', y='nsw xalpha FS inequality')
-	plt.title('Effect of $\\alpha$ on $I(x^{\\alpha})$')
-	plt.savefig('figs/effect_alpha_NSW_Ix.png');
-	'''
-
-
-
-def effect_prop_averse(n,g, alpha, beta_param=2.,util_type = 'linear', save=True):
+def effect_prop_averse(init_u, n,g, alpha, util_type = 'linear', save=True):
     
     data = {'prop cares': [], 'inequality tolerance': [], 'utilities': [],\
                 'usw alloc u': [], 'usw alloc v': [], \
                 'usw u': [], 'usw v': [], \
                 'usw PoI' : [], \
                 'usw max util loss' : [], \
-                'usw xstar FS inequality' : [], 'usw xalpha FS inequality' : [] , 'loss' : [], 'gain': [], 'gain-to-loss' : [] }
-    
-    #data = {'prop cares': [], 'inequality tolerance': [], 'utilities': [],\
-    #           'usw alloc u': [], 'usw alloc v': [], 'nsw alloc u': [], 'nsw alloc v': [], 'maxmin alloc u': [], 'maxmin alloc v': [],\
-    #            'usw u': [], 'usw v': [], 'nsw u': [], 'nsw v': [], 'maxmin u': [], 'maxmin v': [], \
-    #            'usw PoI' : [], 'nsw PoI' : [], 'maxmin PoI' : [], \
-    #            'usw max util loss' : [], 'nsw max util loss' : [], 'maxmin max util loss' : [], \
-    #            'usw xstar FS inequality' : [], 'nsw xstar FS inequality' : [], 'maxmin xstar FS inequality' : [], \
-    #            'usw xalpha FS inequality' : [], 'nsw xalpha FS inequality' : [], 'maxmin xalpha FS inequality' : [] }
+                'usw xstar FS inequality' : [], 'usw xalpha FS inequality' : [] , 'loss' : [], 'gain': [], 'gain to loss' : [], 'distance' : [] }
 
-    # uniformly random utilities
-    #init_u = list(normalize(np.random.rand(n,g), axis=1, norm='l1'))
-    #init_u = list(normalize(np.random.beta(beta_param, 1., (n,g)), axis=1, norm='l1'))
-    init_u = list(np.random.beta(beta_param, 1., (n,g)))
 
     player_dict = {}
     #initialize players
@@ -311,6 +113,7 @@ def effect_prop_averse(n,g, alpha, beta_param=2.,util_type = 'linear', save=True
 
 
     for socialists in range(0,n+1):
+        #the proporiton of agents who are inequality averse
         data['prop cares'].append(float(socialists) / n)
         alphas = [player.c for player in player_dict.values()]
         data['inequality tolerance'].append(alphas)
@@ -322,114 +125,52 @@ def effect_prop_averse(n,g, alpha, beta_param=2.,util_type = 'linear', save=True
         for player in range(socialists):
             player_dict[player].setc(alpha)
 
-        # standard allocation setting
+        # standard allocation setting; compute x*
         alloc = mechs.usw(player_dict, g)
         data['usw alloc u'].append([alloc])
         data['usw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc))
-#       alloc_nsw = mechs.nsw_ceei(player_dict, g)
-#       data['nsw alloc u'].append([alloc_nsw])
-#       data['nsw xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_nsw))
-#       alloc_maxmin = mechs.maxmin_u(player_dict, g)
-#       data['maxmin alloc u'].append([alloc_maxmin])
-#       data['maxmin xstar FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, alloc_maxmin))
 
 
-        # allocations with social preferences
+        # allocations with social preferences; compute x^\alpha
         v_alloc = mechs.usw_v(player_dict, g)
-#		v_alloc_nsw = mechs.nsw_ceei_v(player_dict, g)
-#		v_alloc_maxmin = mechs.maxmin_v(player_dict, g)
         data['usw alloc v'].append([v_alloc])
         data['usw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc))
-#		data['nsw alloc v'].append([v_alloc_nsw])
-#		data['nsw xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_nsw))
-#		data['maxmin alloc v'].append([v_alloc_maxmin])
-#		data['maxmin xalpha FS inequality'].append(inequality.FehrSchmidtIneq(player_dict, v_alloc_maxmin))
-		
-		#compute max utility loss for any individual
-        data['usw max util loss'] = utils.max_util_loss(player_dict, alloc, v_alloc)
-#		data['nsw max util loss'] = utils.max_util_loss(player_dict, alloc_nsw, v_alloc_nsw)
-#		data['maxmin max util loss'] = utils.max_util_loss(player_dict, alloc_maxmin, v_alloc_maxmin)
-		
-		
 
-        #compute social welfare and price of inequality
-        usw_u = utils.utilitariansocialwelfare(player_dict, alloc)
-        #nsw_u = utils.nashsocialwelfare(player_dict, alloc_nsw)
-        #maxminsw_u = utils.rawlsiansocialwelfare(player_dict, alloc_maxmin)
+        #compute individual tradeoff 
+        data['usw max util loss'] = utilities.max_util_loss(player_dict, alloc, v_alloc)
+
+
+        #compute f(u(x*))
+        usw_u = utilities.utilitariansocialwelfare(player_dict, alloc)
         data['usw u'].append(usw_u)
-        #data['nsw u'].append(nsw_u)
-        #data['maxmin u'].append(maxminsw_u)
-
-        usw_v = utils.utilitariansocialwelfare(player_dict, v_alloc)
-        #nsw_v = utils.nashsocialwelfare(player_dict, v_alloc_nsw)
-        #maxminsw_v = utils.rawlsiansocialwelfare(player_dict, v_alloc_maxmin)
-        data['usw v'].append(usw_v)
-        #data['nsw v'].append(nsw_v)
-        #data['maxmin v'].append(maxminsw_v)
-
-        data['usw PoI'].append(float(usw_v / usw_u))
-        #data['nsw PoI'].append(float(nsw_v / nsw_u))
-        #data['maxmin PoI'].append(float(maxminsw_v / maxminsw_u))
         
+        #compute f(u(x^alpha))
+        usw_v = utilities.utilitariansocialwelfare(player_dict, v_alloc)
+        data['usw v'].append(usw_v)
+        
+        # compute a loss ratio (deprecated but afraid to remove)
+        data['usw PoI'].append(float(usw_v / usw_u))
+        
+        #compute the loss and gain
         loss = inequality.loss(player_dict, alloc, v_alloc)
         data['loss'].append(loss)
         
         gain = inequality.gain(player_dict, alloc, v_alloc,alphas=None)
         data['gain'].append(gain)
 
+        # compute gain-to-loss.  
+        # only take the positive part as sometimes comes out negative because of floating point precision
+        data['gain to loss'].append(max(gain / (1.0 * loss), 0))
         
-        data['gain-to-loss'].append(gain / (1.0 * loss))
+        #compute distance d(x*, x^\alpha) in allocation space
+        distance = dist(list(chain(*alloc)), list(chain(*v_alloc)))
+        data['distance'].append(distance)
+        
 
 
 
 
     df = pd.DataFrame(data=data)
 
-
-
-    if save:
-        #print(tabulate(df, headers = 'keys', tablefmt = 'psql'))
-
-        from os.path import exists
-        filename = 'effect_alpha.csv'
-        if exists(filename) == False:
-            df.to_csv(filename,index=False)
-        else:
-            df.to_csv(filename, mode='a', index=False, header=False)
-
-
-
-
-    ## Printing plots! :upside down smiling face:
-    plt.figure()
-    df.plot.line(x='prop cares', y=['usw xalpha FS inequality', 'loss', 'gain', 'gain-to-loss'], color=['blue', 'red', 'black', 'orange'], ls='-', marker='o', label=['$I(x^\\alpha)$', '$loss(\\alpha)$', '$gain(\\alpha)$', '$gain-to-loss(\\alpha)$'])
-#    df.plot.line(x='prop cares', y='loss', color='red', ls='-', marker='o', label='$loss(\\alpha)$')
-#    df.plot.line(x='prop cares', y='gain', color='black', ls='-', marker='o', label='$gain(\\alpha)$')
-#    df.plot.line(x='prop cares', y='gain-to-loss', color='orange', ls='-', marker='o', label='$gain-to-loss(\\alpha)$')
-    plt.title('Effect of proportion of inequality-averse agents')
-    plt.xlabel('Proportion $p$ of inequality-averse agents')
-    plt.ylabel('')
-    plt.legend(loc='upper right')
-    plt.savefig('figs/effect_prop_averse_synthetic_beta_n' + str(n) + '_g' + str(g) + '.png');
-    plt.show()
-    
-    '''
-    plt.figure()
-    df.plot.scatter(x='alphas', y='usw xalpha FS inequality')
-    plt.title('Effect of $\\alpha$ on $I(x^{\\alpha})$')
-    plt.savefig('figs/effect_alpha_USW_Ix.png');
-    '''
-    
-    #plt.figure()
-    #df.plot.scatter(x='prop cares', y='nsw xalpha FS inequality', s=3)
-    #plt.title('Effect of $\\alpha$ on $I(x^{NSW \\circ v^{\\alpha}})$')
-    #plt.savefig('figs/effect_prop_averse_NSW_v_n'+ str(n) + '_g' + str(g) + '.png');
-
-    '''
-    plt.figure()
-    df.plot.scatter(x='alphas', y='nsw xalpha FS inequality')
-    plt.title('Effect of $\\alpha$ on $I(x^{\\alpha})$')
-    plt.savefig('figs/effect_alpha_NSW_Ix.png');
-    '''
 
     return df
